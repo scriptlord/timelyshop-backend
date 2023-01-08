@@ -5,14 +5,20 @@ const morgan = require('morgan');
 const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv/config');
+const authJwt = require('./helpers/jwt');
+const errorHandler = require('./helpers/error-handler');
 
+//handle cors error
 app.use(cors());
 app.options('*', cors())
-
+app.use(authJwt);
+app.use(errorHandler);
 
 //middleware
 app.use(bodyParser.json());
 app.use(morgan('tiny'));
+
+
 
 
 //Routes
@@ -35,7 +41,7 @@ app.use(`${api}/orders`, ordersRoutes);
 mongoose.connect(process.env.CONNECTION_STRING, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    dbName: 'eshop-database'
+    dbName: 'eshop'
 })
 .then(()=>{
     console.log('Database Connection is ready...')
