@@ -1,16 +1,17 @@
-const {Product} = require('../models/product');
-const express = require('express');
-const { Category } = require('../models/category');
-const router = express.Router();
-const mongoose = require('mongoose');
+import { Request, Response } from 'express';
+import mongoose from 'mongoose'
+import { IProductSchema } from '../types/products';
+import { Product } from '../models/product';
+import { Category } from '../models/category';
 
 
-router.get(`/`, async (req, res) =>{
-    // localhost:3000/api/v1/products?categories=2342342,234234
-    let filter = {};
+
+
+export const filterProductByCategory = async (req: Request, res: Response) =>{
+    let filter: mongoose.FilterQuery<IProductSchema > = {};
     if(req.query.categories)
     {
-         filter = {category: req.query.categories.split(',')}
+         filter = {category: {$in: (req.query.categories as string).split(',')}}
     }
 
     const productList = await Product.find(filter).populate('category');
@@ -18,19 +19,22 @@ router.get(`/`, async (req, res) =>{
     if(!productList) {
         res.status(500).json({success: false})
     } 
-    res.send(productList);
-})
+    res.json(productList);
+}
 
-router.get(`/:id`, async (req, res) =>{
+
+export const getProductById = async (req: Request, res: Response) => {
     const product = await Product.findById(req.params.id).populate('category');
 
-    if(!product) {
-        res.status(500).json({success: false})
-    } 
+    if (!product) {
+        res.status(500).json({ success: false });
+    }
     res.send(product);
-})
+}
 
-router.post(`/`, async (req, res) =>{
+
+
+export const addProductToCategory = async (req: Request, res: Response) =>{
     const category = await Category.findById(req.body.category);
     if(!category) return res.status(400).send('Invalid Category')
 
@@ -54,9 +58,10 @@ router.post(`/`, async (req, res) =>{
     return res.status(500).send('The product cannot be created')
 
     res.send(product);
-})
+}
 
-router.put('/:id',async (req, res)=> {
+
+export const editProductInCategory = async (req: Request, res: Response)=> {
     if(!mongoose.isValidObjectId(req.params.id)) {
        return res.status(400).send('Invalid Product Id')
     }
@@ -85,9 +90,10 @@ router.put('/:id',async (req, res)=> {
     return res.status(500).send('the product cannot be updated!')
 
     res.send(product);
-})
+}
 
-router.delete('/:id', (req, res)=>{
+
+export const deleteProduct = async (req: Request, res: Response)=>{
     Product.findByIdAndRemove(req.params.id).then(product =>{
         if(product) {
             return res.status(200).json({success: true, message: 'the product is deleted!'})
@@ -97,9 +103,10 @@ router.delete('/:id', (req, res)=>{
     }).catch(err=>{
        return res.status(500).json({success: false, error: err}) 
     })
-})
+}
 
-router.get(`/get/count`, async (req, res) =>{
+
+export const countAllUserProduct = async (req: Request, res: Response) =>{
     const productCount = await Product.countDocuments((count) => count)
 
     if(!productCount) {
@@ -108,9 +115,11 @@ router.get(`/get/count`, async (req, res) =>{
     res.send({
         productCount: productCount
     });
-})
+}
 
-router.get(`/get/featured/:count`, async (req, res) =>{
+
+
+export const getFeaturedProducts = async (req: Request, res: Response) =>{
     const count = req.params.count ? req.params.count : 0
     const products = await Product.find({isFeatured: true}).limit(+count);
 
@@ -118,6 +127,4 @@ router.get(`/get/featured/:count`, async (req, res) =>{
         res.status(500).json({success: false})
     } 
     res.send(products);
-})
-
-module.exports =router;
+}

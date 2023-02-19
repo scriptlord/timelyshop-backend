@@ -1,6 +1,8 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema, Document } from 'mongoose';
 
-const productSchema = mongoose.Schema({
+import { IProductSchema } from '../types/products';
+
+const productSchema: Schema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -55,9 +57,9 @@ const productSchema = mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-})
+});
 
-productSchema.virtual('id').get(function () {
+productSchema.virtual('id').get(function (this: IProductSchema) {
     return this._id.toHexString();
 });
 
@@ -65,4 +67,4 @@ productSchema.set('toJSON', {
     virtuals: true,
 });
 
-exports.Product = mongoose.model('Product', productSchema);
+export const Product = mongoose.model<IProductSchema>('Product', productSchema);

@@ -1,18 +1,20 @@
-const {Order} = require('../models/order');
-const express = require('express');
-const router = express.Router();
+import { Request, Response} from 'express';
+import { Order } from "../models/order";
+import { OrderItem } from "../models/order-items";
 
-router.get(`/`, async (req, res) =>{
-    const orderList = await Order.find().populate('user', 'name').sort({'dateOrdered': -1});
 
-    if(!orderList) {
-        res.status(500).json({success: false})
-    } 
+
+export const getUserOrderedList = async (req: Request, res: Response) => {
+    const orderList = await Order.find().populate('user', 'name').sort({ dateOrdered: -1 });
+
+    if (!orderList) {
+        res.status(500).json({ success: false });
+    }
     res.send(orderList);
-})
+}
 
 
-router.get(`/:id`, async (req, res) =>{
+export const findOrderById = async (req: Request, res: Response) =>{
     const order = await Order.findById(req.params.id)
     .populate('user', 'name')
     .populate({ 
@@ -24,10 +26,20 @@ router.get(`/:id`, async (req, res) =>{
         res.status(500).json({success: false})
     } 
     res.send(order);
-})
+}
+export const getUserOrderByUserId = async (req: Request, res: Response) =>{
+    const userOrderList = await Order.find({user: req.params.userid}).populate({ 
+        path: 'orderItems', populate: {
+            path : 'product', populate: 'category'} 
+        }).sort({'dateOrdered': -1});
 
-router.post('/', async (req,res)=>{
-    const orderItemsIds = Promise.all(req.body.orderItems.map(async (orderItem) =>{
+    if(!userOrderList) {
+        res.status(500).json({success: false})
+    } 
+    res.send(userOrderList);
+}
+export const postAnOrder = async (req: Request, res: Response)=>{
+    const orderItemsIds = Promise.all(req.body.orderItems.map(async (orderItem: any) =>{
         let newOrderItem = new OrderItem({
             quantity: orderItem.quantity,
             product: orderItem.product
@@ -41,7 +53,7 @@ router.post('/', async (req,res)=>{
 
     const totalPrices = await Promise.all(orderItemsIdsResolved.map(async (orderItemId)=>{
         const orderItem = await OrderItem.findById(orderItemId).populate('product', 'price');
-        const totalPrice = orderItem.product.price * orderItem.quantity;
+        const totalPrice = (orderItem?.product as any)?.price * orderItem!.quantity;;
         return totalPrice
     }))
 
@@ -65,9 +77,10 @@ router.post('/', async (req,res)=>{
     return res.status(400).send('the order cannot be created!')
 
     res.send(order);
-})
+}
 
-router.put('/:id',async (req, res)=> {
+
+export const updateOrderStatusById = async (req: Request, res: Response)=> {
     const order = await Order.findByIdAndUpdate(
         req.params.id,
         {
@@ -80,8 +93,10 @@ router.put('/:id',async (req, res)=> {
     return res.status(400).send('the order cannot be update!')
 
     res.send(order);
-})
-router.delete('/:id', (req, res)=>{
+}
+
+
+export const deleteAnOrderById = async(req: Request, res: Response)=>{
     Order.findByIdAndRemove(req.params.id).then(async order =>{
         if(order) {
             await order.orderItems.map(async orderItem => {
@@ -94,9 +109,10 @@ router.delete('/:id', (req, res)=>{
     }).catch(err=>{
        return res.status(500).json({success: false, error: err}) 
     })
-})
+}
 
-router.get('/get/totalsales', async (req, res)=> {
+
+export const getTotalOrderSales = async (req: Request, res: Response)=> {
     const totalSales= await Order.aggregate([
         { $group: { _id: null , totalsales : { $sum : '$totalPrice'}}}
     ])
@@ -106,9 +122,9 @@ router.get('/get/totalsales', async (req, res)=> {
     }
 
     res.send({totalsales: totalSales.pop().totalsales})
-})
+}
 
-router.get(`/get/count`, async (req, res) =>{
+export const getUserOrderCount = async (req: Request, res: Response) =>{
     const orderCount = await Order.countDocuments((count) => count)
 
     if(!orderCount) {
@@ -117,20 +133,8 @@ router.get(`/get/count`, async (req, res) =>{
     res.send({
         orderCount: orderCount
     });
-})
+}
 
-router.get(`/get/userorders/:userid`, async (req, res) =>{
-    const userOrderList = await Order.find({user: req.params.userid}).populate({ 
-        path: 'orderItems', populate: {
-            path : 'product', populate: 'category'} 
-        }).sort({'dateOrdered': -1});
-
-    if(!userOrderList) {
-        res.status(500).json({success: false})
-    } 
-    res.send(userOrderList);
-})
-module.exports = router;
 
 
 

@@ -1,4 +1,7 @@
-function errorHandler(err, req, res, next) {
+import  {  Request, Response, NextFunction } from 'express';
+
+
+export function errorHandler(err: Error, req:Request, res:Response, next: NextFunction) {
     if (err.name === 'UnauthorizedError') {
         // jwt authentication error
         return res.status(401).json({message: "The user is not authorized"})
@@ -13,4 +16,3 @@ function errorHandler(err, req, res, next) {
     return res.status(500).json(err);
 }
 
-module.exports = errorHandler;

@@ -1,6 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema, Document } from 'mongoose';
 
-const userSchema = new mongoose.Schema({
+import { IUserSchema } from '../types/users';
+
+
+const userSchema: Schema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -41,10 +44,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     }
-
 });
 
-userSchema.virtual('id').get(function () {
+userSchema.virtual('id').get(function (this: IUserSchema) {
     return this._id.toHexString();
 });
 
@@ -52,5 +54,7 @@ userSchema.set('toJSON', {
     virtuals: true,
 });
 
-exports.User = mongoose.model('User', userSchema);
-exports.userSchema = userSchema;
+    
+    
+    
+export const User = mongoose.model<IUserSchema>('User', userSchema);
